@@ -164,7 +164,7 @@ The module's inputs (SCK, SI, CS) accept the ESP32's 3.3 V just fine; only the r
 
 ## Build and upload (PlatformIO)
 
-You need [PlatformIO](https://platformio.org/) (VS Code extension, or `pip install platformio`). The libraries (`mcp_can`) download automatically the first time. If you don't want to clone the repo, download the `.zip` from the latest [Release](https://github.com/Antozjr/OpenSource-AutoDiag/releases), unzip it and run the same commands from that folder.
+You need [PlatformIO](https://platformio.org/) (VS Code extension, or `pip install platformio`). The libraries (`mcp_can`) download automatically the first time. If you don't want to clone the repo, the latest [Release](https://github.com/Antozjr/OpenSource-AutoDiag/releases) has one `.zip` per firmware (`sniffer-firmware` and `autodiag-firmware`): unzip the one you want, open the folder with PlatformIO and run `pio run -t upload` (each zip has a single environment, so no `-e` needed).
 
 > The pins are fixed in the firmware (see [Wiring](#wiring-mcp2515)) and the project is configured for an `esp32dev` board.
 

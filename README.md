@@ -162,7 +162,7 @@ Las entradas del módulo (SCK, SI, CS) aceptan bien los 3.3 V del ESP32; solo ha
 
 ## Compilar y subir (PlatformIO)
 
-Necesitas [PlatformIO](https://platformio.org/) (extensión de VS Code, o `pip install platformio`). Las librerías (`mcp_can`) se descargan solas la primera vez. Si no quieres clonar el repo, descarga el `.zip` de la última [Release](https://github.com/Antozjr/OpenSource-AutoDiag/releases), descomprímelo y ejecuta los mismos comandos desde esa carpeta.
+Necesitas [PlatformIO](https://platformio.org/) (extensión de VS Code, o `pip install platformio`). Las librerías (`mcp_can`) se descargan solas la primera vez. Si no quieres clonar el repo, en la última [Release](https://github.com/Antozjr/OpenSource-AutoDiag/releases) hay un `.zip` por firmware (`sniffer-firmware` y `autodiag-firmware`): descomprime el que quieras, abre la carpeta con PlatformIO y ejecuta `pio run -t upload` (cada zip trae un solo entorno, sin `-e`).
 
 > Los pines están fijados en el firmware (ver [Cableado](#cableado-mcp2515)) y el proyecto está configurado para una placa `esp32dev`.
 
