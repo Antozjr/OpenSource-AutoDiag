@@ -164,6 +164,10 @@ The module's inputs (SCK, SI, CS) accept the ESP32's 3.3 V just fine; only the r
 
 ## Build and upload (PlatformIO)
 
+You need [PlatformIO](https://platformio.org/) (VS Code extension, or `pip install platformio`). The libraries (`mcp_can`) download automatically the first time. If you don't want to clone the repo, download the `.zip` from the latest [Release](https://github.com/Antozjr/OpenSource-AutoDiag/releases), unzip it and run the same commands from that folder.
+
+> The pins are fixed in the firmware (see [Wiring](#wiring-mcp2515)) and the project is configured for an `esp32dev` board.
+
 1. `platformio.ini` provides one environment per firmware (`sniffer`, `autodiag`). Select it in PlatformIO's status bar or with `-e`.
 2. **Build → Upload.** Adjust `board` in `platformio.ini` if your board is not `esp32dev`.
 3. Open the matching HTML file in `web/` (`web/app.html` for normal use; `web/sniffer.html` if you only want the minimal passive mode) in **desktop Chrome or Edge** (Web Serial does not work in Firefox/Safari; on Android it works in Chrome, but check it on your specific device).
