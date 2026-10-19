@@ -1,5 +1,7 @@
 # OpenSource AutoDiag
 
+> 🇬🇧 [English version](README.en.md)
+
 <p>
   <img alt="Plataforma" src="https://img.shields.io/badge/plataforma-ESP32-3987e5?style=flat-square&logo=espressif&logoColor=white">
   <img alt="Framework" src="https://img.shields.io/badge/framework-PlatformIO%2FArduino-orange?style=flat-square&logo=platformio&logoColor=white">
