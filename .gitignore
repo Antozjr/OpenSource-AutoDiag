@@ -1,0 +1,16 @@
+.pio
+.vscode/
+
+# Capturas exportadas (datos del coche, no código)
+capturas/
+
+# Documentos de contexto locales, no se publican
+AGENTS.md
+CLAUDE.md
+
+# Config local de herramientas, no es del proyecto
+.claude/
+.playwright-mcp/
+
+# graphify: salida generada, no es parte del proyecto
+graphify-out/

@@ -1,0 +1,370 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, interactive-widget=resizes-content">
+<title>OpenSource AutoDiag — Sniffer F-CAN</title>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#0a0d12">
+<meta name="color-scheme" content="dark">
+<link rel="icon" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#0a0d12;--panel:#12161d;--panel2:#1a2029;--inset:#0b0e13;
+    --line:rgba(255,255,255,.08);--line-strong:rgba(255,255,255,.14);
+    --txt:#eef1f5;--mut:#93a0b4;--mut2:#5f6b7d;
+    --acc:#34d3d1;--acc-ink:#03211f;--acc-dim:rgba(52,211,209,.14);
+    --ok:#0ca30c;--warn:#fab219;--bad:#d03b3b;
+    --ease-out:cubic-bezier(.23,1,.32,1);
+    --font-ui:'Inter',system-ui,-apple-system,'Segoe UI',sans-serif;
+    --font-display:'Space Grotesk',var(--font-ui);
+    --font-mono:'JetBrains Mono',ui-monospace,monospace;
+  }
+  @media (prefers-reduced-motion:reduce){
+    *,*::before,*::after{animation-duration:.001ms!important;animation-iteration-count:1!important;transition-duration:.001ms!important;scroll-behavior:auto!important}
+  }
+  *{box-sizing:border-box}
+  html{-webkit-tap-highlight-color:transparent;-webkit-text-size-adjust:100%;overscroll-behavior:none}
+  body{margin:0;font-family:var(--font-ui);background:var(--bg);color:var(--txt);font-size:14px;overscroll-behavior:none}
+  button,a,[role="button"]{touch-action:manipulation}
+  button{user-select:none;-webkit-user-select:none;-webkit-touch-callout:none}
+  @media (pointer:coarse){ input[type=text]{font-size:16px} }
+  header{display:flex;align-items:center;gap:14px;padding:12px 18px;background:var(--panel);border-bottom:1px solid var(--line);flex-wrap:wrap;position:sticky;top:0;z-index:5}
+  header h1{font-family:var(--font-display);font-size:17px;margin:0;font-weight:700;letter-spacing:-.01em}
+  header .sub{font-family:var(--font-ui);color:var(--mut);font-size:12px;font-weight:400;letter-spacing:normal}
+  header .badge{font-size:10px;padding:2px 8px;border-radius:20px;background:var(--inset);color:var(--mut2);font-weight:600;border:1px solid var(--line)}
+  .grow{flex:1}
+  button{background:var(--acc);color:var(--acc-ink);border:0;border-radius:7px;padding:8px 14px;font-weight:700;cursor:pointer;font-size:13px;font-family:var(--font-ui);display:inline-flex;align-items:center;gap:7px;transition:filter .12s var(--ease-out),transform .1s var(--ease-out),box-shadow .12s var(--ease-out)}
+  button:active{transform:scale(.97)}
+  button:focus-visible{outline:none;box-shadow:0 0 0 3px var(--acc-dim),0 0 0 1px var(--acc)}
+  button.sec{background:var(--panel2);color:var(--txt);border:1px solid var(--line-strong)}
+  button.warn{background:var(--warn);color:#2b1700}
+  button:disabled{opacity:.4;cursor:not-allowed;filter:none}
+  button:disabled:active{transform:none}
+  @keyframes spin{to{transform:rotate(360deg)}}
+  button.connecting::before{content:'';width:13px;height:13px;border-radius:50%;border:2px solid rgba(3,33,31,.35);border-top-color:var(--acc-ink);animation:spin .7s linear infinite}
+  .status{display:inline-flex;align-items:center;gap:6px;font-size:12px;color:var(--mut);white-space:nowrap;padding:5px 10px;border-radius:20px;background:var(--inset);border:1px solid var(--line)}
+  .dot{width:9px;height:9px;border-radius:50%;background:var(--bad);flex:0 0 9px;transition:background .15s var(--ease-out)}
+  .dot.on{background:var(--ok);box-shadow:0 0 0 3px rgba(12,163,12,.18)}
+  main{padding:16px;display:grid;grid-template-columns:2fr 1fr;gap:14px;max-width:1400px;margin:0 auto}
+  @media (max-width:900px){main{grid-template-columns:1fr}header h1{font-size:14px}}
+  @media (hover:hover) and (pointer:fine){
+    button:hover{filter:brightness(1.12)}
+    tbody tr:hover{background:var(--panel2)}
+  }
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:14px;min-width:0;box-shadow:0 1px 2px rgba(3,6,14,.4),0 10px 26px -14px rgba(1,3,9,.7)}
+  .card h2{margin:0 0 10px;font-size:11px;color:var(--mut2);text-transform:uppercase;letter-spacing:.6px;font-weight:700}
+  .row{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:10px}
+  input[type=text]{background:var(--inset);border:1px solid var(--line-strong);color:var(--txt);border-radius:6px;padding:8px 10px;font-size:13px;font-family:var(--font-ui);transition:border-color .12s var(--ease-out),box-shadow .12s var(--ease-out)}
+  input[type=text]:focus{outline:none;border-color:var(--acc);box-shadow:0 0 0 3px var(--acc-dim)}
+  .hint{font-size:12px;color:var(--mut);line-height:1.6}
+  code{font-family:var(--font-mono);background:var(--inset);padding:1px 6px;border-radius:4px;color:var(--acc);font-size:12px}
+  .log{font-family:var(--font-mono);font-size:11.5px;color:var(--mut);max-height:160px;overflow:auto;background:var(--inset);border-radius:10px;padding:10px;border:1px solid var(--line);overscroll-behavior:contain}
+  .tablewrap{max-height:70vh;overflow:auto;border-radius:10px;border:1px solid var(--line);overscroll-behavior:contain}
+  table{width:100%;border-collapse:collapse;font-size:12.5px}
+  thead th{position:sticky;top:0;background:var(--panel);text-align:left;padding:8px 10px;color:var(--mut2);font-family:var(--font-ui);font-size:10.5px;text-transform:uppercase;letter-spacing:.5px;border-bottom:1px solid var(--line);z-index:1}
+  tbody td{padding:7px 10px;border-bottom:1px solid var(--line);font-family:var(--font-mono);white-space:nowrap}
+  tbody tr{transition:background .12s var(--ease-out)}
+  .id-cell{color:var(--acc);font-weight:700}
+  .flash{animation:flashbg .7s var(--ease-out)}
+  @keyframes flashbg{0%{background:rgba(250,178,25,.28)}100%{background:transparent}}
+  .stat{display:flex;gap:18px;margin-bottom:10px}
+  .stat .n{font-size:20px;font-weight:700;font-family:var(--font-mono);font-variant-numeric:tabular-nums}
+  .stat .l{font-size:11px;color:var(--mut2);margin-top:2px}
+  .marker-item{background:var(--panel2);border-left:3px solid var(--acc);border-radius:6px;padding:7px 10px;margin-bottom:6px;font-size:12px;opacity:0;animation:fadein .2s var(--ease-out) forwards}
+  @keyframes fadein{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
+  .marker-item .tm{color:var(--mut2);font-size:11px;margin-right:6px;font-family:var(--font-mono)}
+
+  .toast-stack{position:fixed;bottom:18px;right:18px;display:flex;flex-direction:column;gap:8px;z-index:200;max-width:340px;width:calc(100% - 36px)}
+  @media (max-width:900px){.toast-stack{right:12px;left:12px;max-width:none;width:auto}}
+  .toast{background:var(--panel2);border:1px solid var(--line-strong);border-left:3px solid var(--acc);border-radius:8px;padding:10px 14px;font-size:13px;color:var(--txt);box-shadow:0 1px 2px rgba(3,6,14,.4),0 10px 26px -14px rgba(1,3,9,.7);opacity:0;transform:translateY(6px);transition:transform .2s var(--ease-out),opacity .2s var(--ease-out);align-self:flex-end}
+  .toast.show{opacity:1;transform:none}
+  .toast.error{border-left-color:var(--bad)}
+  .toast.ok{border-left-color:var(--ok)}
+</style>
+</head>
+<body>
+<header>
+  <h1>OpenSource AutoDiag <span class="sub">· Sniffer F-CAN — escucha pasiva, listen-only</span></h1>
+  <span class="badge">Fase 1 · modo mínimo de confianza</span>
+  <div class="grow"></div>
+  <span class="status"><span class="dot" id="dotBus"></span><span id="stBus">Sin tráfico CAN</span></span>
+  <span class="status"><span class="dot" id="dot"></span><span id="st">Sin conectar</span></span>
+  <button id="btnConnect"><span id="btnConnectLabel">Conectar ESP32</span></button>
+</header>
+
+<main>
+  <!-- TABLA DE IDs -->
+  <section class="card">
+    <h2>IDs vistos en el bus</h2>
+    <div class="stat">
+      <div><div class="n" id="statDistinct">0</div><div class="l">IDs distintos</div></div>
+      <div><div class="n" id="statTotal">0</div><div class="l">Tramas totales</div></div>
+      <div><div class="n" id="statRate">0</div><div class="l">Cambios/s</div></div>
+    </div>
+    <div class="row">
+      <input type="text" id="filter" placeholder="Filtrar por ID (ej. 17C)" style="flex:1" aria-label="Filtrar por ID">
+      <button id="btnReset" class="warn">Reset tabla</button>
+      <button id="btnCsv" class="sec">⬇ CSV</button>
+    </div>
+    <div class="tablewrap">
+      <table>
+        <thead><tr><th>ID</th><th>Len</th><th>Datos (hex)</th><th>Veces</th><th>Hace</th></tr></thead>
+        <tbody id="tbody"></tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- MARCADORES + CONSOLA -->
+  <section class="card">
+    <h2>Marcadores de acción</h2>
+    <div class="hint">Justo antes de accionar algo en el coche (freno, intermitente, ventanilla…), escribe qué vas a hacer y pulsa Marcar. Luego mira en la tabla qué IDs se iluminaron justo después.</div>
+    <div class="row" style="margin-top:8px">
+      <input type="text" id="markerText" placeholder="ej. piso el freno" style="flex:1" aria-label="Descripción del marcador">
+      <button id="btnMark" class="sec">Marcar</button>
+    </div>
+    <div id="markerList"><span class="hint">Sin marcadores todavía.</span></div>
+
+    <h2 style="margin-top:16px">Consola</h2>
+    <div class="log" id="console">Esperando conexión…</div>
+  </section>
+</main>
+
+<script>
+let port, reader, writer, keepReading=false;
+let buf="";
+const rows=new Map();        // id -> {tr, tdLen, tdData, tdCnt, tdAgo}
+let filterStr="";
+let recentChanges=[];        // timestamps (ms) de cambios, para el contador cambios/s
+let lastFrameWallMs=0;        // Date.now() de la última trama recibida (cualquier ID)
+let busActive=false;
+const BUS_TIMEOUT_MS=2000;   // sin tramas en este tiempo -> se considera sin tráfico
+
+// ---------- notificaciones (sustituyen a alert()) ----------
+let toastStack;
+function toast(message, type){
+  if(!toastStack){
+    toastStack=document.createElement('div'); toastStack.className='toast-stack';
+    toastStack.setAttribute('role','status'); toastStack.setAttribute('aria-live','polite');
+    document.body.appendChild(toastStack);
+  }
+  const el=document.createElement('div'); el.className='toast'+(type?' '+type:''); el.textContent=message;
+  toastStack.appendChild(el);
+  requestAnimationFrame(()=> el.classList.add('show'));
+  setTimeout(()=>{ el.classList.remove('show'); setTimeout(()=>el.remove(),200); }, 3200);
+}
+
+// ---------- Web Serial ----------
+document.getElementById('btnConnect').onclick=async()=>{
+  if(!('serial' in navigator)){toast('Tu navegador no soporta Web Serial. Usa Chrome o Edge de escritorio.','error');return;}
+  const btn=document.getElementById('btnConnect');
+  const label=document.getElementById('btnConnectLabel');
+  btn.classList.add('connecting'); label.textContent='Conectando…';
+  try{
+    port=await navigator.serial.requestPort();
+    await port.open({baudRate:115200});
+    writer=port.writable.getWriter();
+    keepReading=true;
+    lastFrameWallMs=0;
+    setStatus(true);
+    readLoop();
+  }catch(e){logc('Error al conectar: '+e.message);}
+  finally{btn.classList.remove('connecting'); label.textContent='Conectar ESP32';}
+};
+
+async function readLoop(){
+  const dec=new TextDecoder();
+  reader=port.readable.getReader();
+  try{
+    while(keepReading){
+      const {value,done}=await reader.read();
+      if(done)break;
+      buf+=dec.decode(value);
+      let nl;
+      while((nl=buf.indexOf('\n'))>=0){
+        const line=buf.slice(0,nl).trim();
+        buf=buf.slice(nl+1);
+        if(line)handleLine(line);
+      }
+    }
+  }catch(e){logc('Lectura interrumpida: '+e.message);}
+  finally{
+    reader.releaseLock();
+    keepReading=false;
+    lastFrameWallMs=0;
+    updateBusStatus(Date.now());
+  }
+}
+
+async function send(cmd){
+  if(!writer)return;
+  await writer.write(new TextEncoder().encode(cmd+'\n'));
+  logc('› '+cmd);
+}
+
+// ---------- procesado de líneas ----------
+function handleLine(line){
+  let o;try{o=JSON.parse(line);}catch(e){logc(line);return;}
+  if(o.evt==='frame'){lastFrameWallMs=Date.now();updateRow(o);return;}
+  if(o.evt==='stats'){
+    document.getElementById('statDistinct').textContent=o.distinct;
+    document.getElementById('statTotal').textContent=o.total;
+    return;
+  }
+  if(o.evt==='reset'){
+    rows.forEach(r=>r.tr.remove());
+    rows.clear();
+    document.getElementById('statDistinct').textContent='0';
+    document.getElementById('statTotal').textContent='0';
+    logc(line);
+    return;
+  }
+  // boot / ready / error
+  logc(line);
+}
+
+function updateRow(o){
+  const now=Date.now();
+  recentChanges.push(now);
+  recentChanges=recentChanges.filter(t=>now-t<1000);
+  document.getElementById('statRate').textContent=recentChanges.length;
+
+  let r=rows.get(o.id);
+  if(!r){
+    const tr=document.createElement('tr');
+    const tdId=document.createElement('td'); tdId.className='id-cell'; tdId.textContent='0x'+o.id;
+    const tdLen=document.createElement('td');
+    const tdData=document.createElement('td');
+    const tdCnt=document.createElement('td');
+    const tdAgo=document.createElement('td');
+    tr.append(tdId,tdLen,tdData,tdCnt,tdAgo);
+    r={tr,tdLen,tdData,tdCnt,tdAgo,lastMs:0};
+    rows.set(o.id,r);
+    insertSorted(tr,o.id);
+  }
+  r.tdLen.textContent=o.len;
+  r.tdData.textContent=o.d;
+  r.tdCnt.textContent=o.cnt;
+  r.lastMs=o.t;
+  r.tr.classList.remove('flash');
+  void r.tr.offsetWidth; // reinicia la animación
+  r.tr.classList.add('flash');
+  applyFilter(r);
+}
+
+function insertSorted(tr,id){
+  const tbody=document.getElementById('tbody');
+  const rowsArr=[...rows.entries()].sort((a,b)=>parseInt(a[0],16)-parseInt(b[0],16));
+  const idx=rowsArr.findIndex(([k])=>k===id);
+  const next=rowsArr[idx+1];
+  if(next)tbody.insertBefore(tr,next[1].tr);
+  else tbody.appendChild(tr);
+}
+
+function applyFilter(r){
+  const show=!filterStr || r.tr.firstChild.textContent.toLowerCase().includes(filterStr);
+  r.tr.style.display=show?'':'none';
+}
+
+document.getElementById('filter').oninput=(e)=>{
+  filterStr=e.target.value.trim().toLowerCase();
+  rows.forEach(applyFilter);
+};
+
+// refresca la columna "hace" y el indicador de tráfico CAN cada 500ms
+setInterval(()=>{
+  const now=Date.now();
+  rows.forEach(r=>{
+    if(!r.lastMs)return;
+    r.tdAgo.textContent=fmtAgo(now, r.lastMs);
+  });
+  updateBusStatus(now);
+},500);
+
+function updateBusStatus(now){
+  const active = keepReading && lastFrameWallMs>0 && (now-lastFrameWallMs)<BUS_TIMEOUT_MS;
+  if(active===busActive)return;
+  busActive=active;
+  document.getElementById('dotBus').classList.toggle('on',active);
+  document.getElementById('stBus').textContent=active?'Tráfico CAN detectado':'Sin tráfico CAN';
+}
+let t0wall=Date.now(), t0dev=null;
+function fmtAgo(nowWall, devMs){
+  if(t0dev===null)t0dev=devMs;
+  const approxWallAtDevT0 = t0wall - t0dev;
+  const s=((nowWall - (approxWallAtDevT0 + devMs))/1000);
+  if(s<1)return '<1s';
+  if(s<60)return s.toFixed(0)+'s';
+  return (s/60).toFixed(1)+'min';
+}
+
+// ---------- reset / csv ----------
+document.getElementById('btnReset').onclick=()=>send('RESET');
+document.getElementById('btnCsv').onclick=async()=>{
+  if(!rows.size){toast('No hay datos todavía.','error');return;}
+  const now=new Date();
+  const stamp=now.toISOString().slice(0,19).replace(/[:T]/g,'-');
+  const filename='sniffer_civic_'+stamp+'.csv';
+  const lines=['# capturado: '+now.toLocaleString(),'id,len,data,count'];
+  rows.forEach((r,id)=>lines.push(`${id},${r.tdLen.textContent},${r.tdData.textContent},${r.tdCnt.textContent}`));
+  const content=lines.join('\n');
+
+  // Si el navegador soporta File System Access, deja elegir carpeta una vez
+  // (Chrome recuerda la última usada para este mismo id, p.ej. capturas/).
+  if('showSaveFilePicker' in window){
+    try{
+      const handle=await window.showSaveFilePicker({
+        id:'sniffer-csv-exports',
+        suggestedName:filename,
+        types:[{description:'CSV', accept:{'text/csv':['.csv']}}]
+      });
+      const w=await handle.createWritable();
+      await w.write(content);
+      await w.close();
+      logc('— CSV guardado: '+filename+' —');
+      return;
+    }catch(e){
+      if(e.name==='AbortError')return;   // el usuario canceló el diálogo
+      logc('No se pudo guardar con selector de carpeta, uso descarga normal: '+e.message);
+    }
+  }
+
+  // Fallback: descarga normal (va a la carpeta de descargas del navegador)
+  const blob=new Blob([content],{type:'text/csv'});
+  const a=document.createElement('a');a.href=URL.createObjectURL(blob);
+  a.download=filename;a.click();
+};
+
+// ---------- marcadores ----------
+document.getElementById('btnMark').onclick=()=>{
+  const txt=document.getElementById('markerText').value.trim();
+  if(!txt)return;
+  const list=document.getElementById('markerList');
+  if(list.querySelector('.hint'))list.innerHTML='';
+  const div=document.createElement('div');
+  div.className='marker-item';
+  const tm=document.createElement('span');
+  tm.className='tm';
+  tm.textContent=new Date().toLocaleTimeString();
+  div.append(tm, document.createTextNode(txt));
+  list.prepend(div);
+  document.getElementById('markerText').value='';
+  logc('— marcador: '+txt+' —');
+};
+
+// ---------- util ----------
+function setStatus(on){document.getElementById('dot').classList.toggle('on',on);document.getElementById('st').textContent=on?'Conectado':'Sin conectar';document.getElementById('btnConnect').disabled=on;}
+function logc(m){const c=document.getElementById('console');c.textContent+=(c.textContent==='Esperando conexión…'?'':'\n')+m;c.scrollTop=c.scrollHeight;const lines=c.textContent.split('\n');if(lines.length>200)c.textContent=lines.slice(-200).join('\n');}
+
+if('serviceWorker' in navigator){
+  window.addEventListener('load', ()=>{
+    navigator.serviceWorker.register('service-worker.js').catch(()=>{});
+  });
+}
+</script>
+</body>
+</html>
